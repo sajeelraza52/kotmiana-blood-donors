@@ -8,7 +8,9 @@ STEP 1 — Firebase Database + Rules (alag project: kotmiana-blood-donors):
   2. Agar database abhi nahi bana to: Create Database → Location United States → Locked mode → Enable
   3. Rules tab kholo → poora rules text delete kar ke ye paste karo → Publish:
 
-{"rules":{"blooddonors":{".read":true,".write":true}}}
+{"rules":{"blooddonors":{".read":true,".write":true},"bloodrequests":{".read":true,".write":true}}}
+
+  (Donors + Requests dono ke liye public read/write.)
 
   (Site mein is naye project ki config pehle se daal di gayi hai — repo update ho gaya.)
 
