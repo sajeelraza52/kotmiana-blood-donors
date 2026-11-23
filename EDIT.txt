@@ -1,0 +1,30 @@
+KOTMIANA BLOOD DONORS — EDIT / SETUP
+=====================================
+
+LIVE KARNE KE 2 STEPS (dono zaroori hain):
+
+STEP 1 — Firebase Rules publish karo (warna donors save nahi honge):
+  1. https://console.firebase.google.com/project/sajeel-toolkit/database/sajeel-toolkit-default-rtdb/rules kholo
+  2. Poora rules text delete kar ke neeche wala paste karo, phir Publish dabao:
+
+{"rules":{"tools":{".read":"auth != null",".write":"auth != null && root.child('admins').child(auth.uid).exists()"},"stats":{".read":"auth != null && root.child('admins').child(auth.uid).exists()",".write":"auth != null"},"users":{".read":"auth != null && root.child('admins').child(auth.uid).exists()","$uid":{".read":"auth != null && auth.uid === $uid",".write":"auth != null && root.child('admins').child(auth.uid).exists()"}},"admins":{"$uid":{".read":"auth != null && auth.uid === $uid",".write":false}},"blooddonors":{".read":true,".write":true}}}
+
+  (Ye tumhare toolkit ke rules hi hain + sirf "blooddonors" node add hua hai — public read/write, taake gaon ka koi bhi donor add kar sake aur dekh sake.)
+
+STEP 2 — Deploy karo:
+  Apne Sajeel Hosting tool mein index.html upload karo, naam likho:
+    kotmiana-blood-donors
+  Link banega: sajeel-kotmiana-blood-donors.vercel.app
+  (Repo mein code pehle se push kar diya gaya hai: github.com/sajeelraza52/kotmiana-blood-donors)
+
+BADALNE KE LIYE (index.html mein):
+  - Gaon ka naam: "Kotmiana" likha hai — Replace All se badlo (header, title, footer, form placeholder)
+  - WhatsApp number (footer): 923061601587 — apna number daalo
+  - Sajeel Mods footer link: sajeel-bio.vercel.app
+  - Sample donors: sirf Demo mode mein dikhte hain (Firebase connect hote hi gayab) — delete karne ki zaroorat nahi
+  - Apni entry delete karna: jis phone se add ki ho, usi par card par 🗑️ Delete dikhega
+
+NOTES:
+  - Number public hota hai — form mein ye warning likhi hai
+  - Donor add karte waqt number kisi bhi format mein likho (0306..., +92..., 92...) — site khud theek kar leti hai
+  - Contact option: Call / WhatsApp / Dono — card par sirf wahi button dikhta hai jo donor ne chuna ho
