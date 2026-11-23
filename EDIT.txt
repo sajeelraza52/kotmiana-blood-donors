@@ -3,13 +3,14 @@ KOTMIANA BLOOD DONORS — EDIT / SETUP
 
 LIVE KARNE KE 2 STEPS (dono zaroori hain):
 
-STEP 1 — Firebase Rules publish karo (warna donors save nahi honge):
-  1. https://console.firebase.google.com/project/sajeel-toolkit/database/sajeel-toolkit-default-rtdb/rules kholo
-  2. Poora rules text delete kar ke neeche wala paste karo, phir Publish dabao:
+STEP 1 — Firebase Database + Rules (alag project: kotmiana-blood-donors):
+  1. https://console.firebase.google.com/project/kotmiana-blood-donors/database kholo
+  2. Agar database abhi nahi bana to: Create Database → Location United States → Locked mode → Enable
+  3. Rules tab kholo → poora rules text delete kar ke ye paste karo → Publish:
 
-{"rules":{"tools":{".read":"auth != null",".write":"auth != null && root.child('admins').child(auth.uid).exists()"},"stats":{".read":"auth != null && root.child('admins').child(auth.uid).exists()",".write":"auth != null"},"users":{".read":"auth != null && root.child('admins').child(auth.uid).exists()","$uid":{".read":"auth != null && auth.uid === $uid",".write":"auth != null && root.child('admins').child(auth.uid).exists()"}},"admins":{"$uid":{".read":"auth != null && auth.uid === $uid",".write":false}},"blooddonors":{".read":true,".write":true}}}
+{"rules":{"blooddonors":{".read":true,".write":true}}}
 
-  (Ye tumhare toolkit ke rules hi hain + sirf "blooddonors" node add hua hai — public read/write, taake gaon ka koi bhi donor add kar sake aur dekh sake.)
+  (Site mein is naye project ki config pehle se daal di gayi hai — repo update ho gaya.)
 
 STEP 2 — Deploy karo:
   Apne Sajeel Hosting tool mein index.html upload karo, naam likho:

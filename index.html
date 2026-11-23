@@ -96,6 +96,20 @@ input:focus,select:focus{border-color:var(--red2)}
 .status.demo .dot{background:var(--gold)}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#14532d;border:1px solid #22c55e;color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;font-size:14px;z-index:99;display:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
 @media(min-width:640px){.modal-bg{align-items:center}.modal{border-radius:20px}}
+.hero{position:relative}
+.hero::before{content:"";position:absolute;left:50%;top:110px;transform:translateX(-50%);width:420px;height:420px;background:radial-gradient(circle,rgba(230,57,70,.22),transparent 65%);pointer-events:none}
+.hero h1{letter-spacing:.5px}
+.sec h2{position:relative;padding-bottom:10px}
+.sec h2::after{content:"";position:absolute;left:0;bottom:0;width:56px;height:3px;background:linear-gradient(90deg,var(--gold),var(--red2));border-radius:2px}
+.card{transition:transform .2s,border-color .2s,box-shadow .2s}
+.card:hover{transform:translateY(-3px);border-color:rgba(230,57,70,.55);box-shadow:0 10px 30px rgba(230,57,70,.18)}
+.avail{display:inline-block;margin-top:8px;font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px}
+.avail.ok{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.4)}
+.avail.no{background:rgba(245,197,66,.12);color:var(--gold);border:1px solid rgba(245,197,66,.4)}
+.req{border-color:rgba(255,77,94,.5)}
+.req .badge{font-size:24px}
+.shimmer{background:linear-gradient(90deg,#f5c542,#fff2b0,#f5c542);-webkit-background-clip:text;background-clip:text;color:transparent;animation:shim 3s linear infinite;background-size:200% 100%}
+@keyframes shim{0%{background-position:0% 0}100%{background-position:200% 0}}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -129,6 +143,14 @@ input:focus,select:focus{border-color:var(--red2)}
     <input class="search" id="q" placeholder="🔍 Naam ya mohalla likho... (e.g. Ahmed, Kotmiana)" oninput="onSearch(this.value)">
     <div class="chips" id="chips"></div>
     <div class="status" id="status"><span class="dot"></span>Loading...</div>
+  </section>
+
+  <section class="sec" id="requests" style="margin-top:26px">
+    <h2>🆘 Blood <span>Chahiye?</span></h2>
+    <p class="sub">Kisi mareez ko khoon chahiye ho to yahan request add karo — donors direct rabta karenge.</p>
+    <div style="margin-bottom:12px"><button class="btn red" onclick="openReqModal()">＋ Blood Request Add Karo</button></div>
+    <div class="grid" id="reqGrid"></div>
+    <div class="empty" id="reqEmpty" style="display:none;padding:24px 16px"><b>Abhi koi urgent request nahi</b><br>Allah kare kisi ko zaroorat na pare.</div>
   </section>
 
   <section class="grid" id="grid"></section>
@@ -168,15 +190,17 @@ input:focus,select:focus{border-color:var(--red2)}
   </section>
 
   <footer>
-    🩸 <b>Kotmiana Blood Donors</b> — gaon ki khidmat, Sajeel Mods ki taraf se<br>
-    Website banwayein? WhatsApp: <a href="https://wa.me/923061601587">0306 1601587</a> • Made with ❤️ by <a href="https://sajeel-bio.vercel.app">Sajeel Mods</a>
+    <div style="font-size:26px">👑</div>
+    <div class="shimmer" style="font-size:22px;font-weight:900;letter-spacing:3px">SAJEEL MODS</div>
+    <div style="margin-top:6px">🩸 Kotmiana Blood Donors</div>
+    <div style="margin-top:4px">WhatsApp: <a href="https://wa.me/923061601587">0306 1601587</a></div>
   </footer>
 </div>
 
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <button class="x" onclick="closeModal()">✕</button>
-    <h2>🩸 Donor Bano</h2>
+    <h2 id="modalTitle">🩸 Donor Bano</h2>
     <p style="color:var(--dim);font-size:13.5px;margin-top:6px;line-height:1.6">Form bharo — aapka naam aur number is list mein aa jayega.</p>
     <label>Apna Naam *</label>
     <input id="fName" placeholder="e.g. Ahmed Raza">
@@ -195,8 +219,36 @@ input:focus,select:focus{border-color:var(--red2)}
     <label>Pichli dafa kab khoon diya? (optional)</label>
     <input id="fLast" type="date">
     <div class="out" id="fOut"></div>
-    <button class="btn red" style="width:100%;margin-top:16px" onclick="submitDonor()">✅ Donor List Mein Add Karo</button>
+    <button class="btn red" id="submitBtn" style="width:100%;margin-top:16px" onclick="submitDonor()">✅ Donor List Mein Add Karo</button>
     <p class="hint">⚠️ Apna number public hoga — gaon ke log aap ko direct call/WhatsApp kar sakenge. Galat number na likhein.</p>
+  </div>
+</div>
+
+<div class="modal-bg" id="reqModalBg" onclick="if(event.target===this)closeReqModal()">
+  <div class="modal">
+    <button class="x" onclick="closeReqModal()">✕</button>
+    <h2>🆘 Blood Request</h2>
+    <p style="color:var(--dim);font-size:13.5px;margin-top:6px;line-height:1.6">Mareez ki details likho — donors aap se direct rabta karenge.</p>
+    <label>Mareez ka Naam *</label>
+    <input id="rPatient" placeholder="e.g. Muhammad Ahmed">
+    <label>Hospital *</label>
+    <input id="rHospital" placeholder="e.g. THQ Hospital Kotmiana">
+    <label>Blood Group *</label>
+    <select id="rGroup"><option value="">— Select karo —</option></select>
+    <label>Kitne Units? *</label>
+    <input id="rUnits" type="number" min="1" max="10" placeholder="e.g. 2">
+    <label>Contact Number *</label>
+    <input id="rPhone" type="tel" placeholder="e.g. 0306 1601587" inputmode="tel">
+    <label>Rabte ka tareeqa *</label>
+    <div class="radios" id="rContact">
+      <div class="radio on" data-v="call" onclick="pickReqContact(this)">📞 Call</div>
+      <div class="radio" data-v="whatsapp" onclick="pickReqContact(this)">💬 WhatsApp</div>
+      <div class="radio" data-v="both" onclick="pickReqContact(this)">📞+💬 Dono</div>
+    </div>
+    <label>Note (optional)</label>
+    <input id="rNote" placeholder="e.g. Operation kal subah hai">
+    <div class="out" id="rOut"></div>
+    <button class="btn red" style="width:100%;margin-top:16px" onclick="submitRequest()">✅ Request Add Karo</button>
   </div>
 </div>
 
@@ -215,7 +267,7 @@ var COMPAT = {
   'AB-':{give:['AB+','AB-'],take:['AB-','A-','B-','O-']},
   'AB+':{give:['AB+'],take:['A+','A-','B+','B-','O+','O-','AB+','AB-']}
 };
-var donors = [], filterGroup = 'All', searchQ = '', FB_ON = false, fbDb = null, DEMO = false;
+var donors = [], requests = [], filterGroup = 'All', searchQ = '', FB_ON = false, fbDb = null, DEMO = false, editingId = null;
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
@@ -229,12 +281,19 @@ function normPhone(raw){
   return {intl:d, display:'0'+d.slice(2,5)+'-'+d.slice(5)};
 }
 
-function contactButtons(d){
-  var msg = encodeURIComponent('Assalam-o-Alaikum! Mujhe blood chahiye ('+d.group+'). Aap Kotmiana Blood Donors mein donor hain — please reply karein.');
+function contactButtons(d, msgText){
+  var msg = encodeURIComponent(msgText || ('Assalam-o-Alaikum! Mujhe blood chahiye ('+d.group+'). Aap Kotmiana Blood Donors mein donor hain — please reply karein.'));
   var h = '';
   if(d.contact==='call' || d.contact==='both') h += '<a class="btn call" href="tel:+'+d.phone+'">📞 Call</a>';
   if(d.contact==='whatsapp' || d.contact==='both') h += '<a class="btn wa" href="https://wa.me/'+d.phone+'?text='+msg+'" target="_blank" rel="noopener">💬 WhatsApp</a>';
   return h;
+}
+
+function availStatus(last){
+  if(!last) return {ok:true, text:'✅ Available'};
+  var days = Math.floor((Date.now() - new Date(last+'T00:00:00').getTime())/86400000);
+  if(days >= 90) return {ok:true, text:'✅ Available'};
+  return {ok:false, text:'🩸 Donated '+days+' din pehle'};
 }
 
 function myIds(){
@@ -269,8 +328,9 @@ function renderDonors(){
   document.getElementById('empty').style.display = list.length? 'none':'block';
   grid.innerHTML = list.map(function(d){
     var last = d.lastDonated ? ('<br>🩸 Last donation: <b>'+esc(d.lastDonated)+'</b>') : '';
-    var del = mine.indexOf(d.id)>=0 ? '<button class="del" onclick="deleteDonor(\''+d.id+'\')">🗑️ Delete</button>' : '';
-    return '<div class="card">'+del+'<div class="top"><div class="badge">'+esc(d.group)+'</div><div><h3>'+esc(d.name)+'</h3><div class="meta">📍 '+(esc(d.area)||'Kotmiana')+'<br>📱 '+esc(d.phoneDisplay||d.phone)+last+'</div></div></div><div class="acts">'+contactButtons(d)+'</div></div>';
+    var av = availStatus(d.lastDonated);
+    var del = mine.indexOf(d.id)>=0 ? '<div style="position:absolute;top:10px;right:10px;display:flex;gap:6px"><button class="del" style="position:static" onclick="editDonor(\''+d.id+'\')">✏️ Edit</button><button class="del" style="position:static" onclick="deleteDonor(\''+d.id+'\')">🗑️ Delete</button></div>' : '';
+    return '<div class="card">'+del+'<div class="top"><div class="badge">'+esc(d.group)+'</div><div><h3>'+esc(d.name)+'</h3><div class="meta">📍 '+(esc(d.area)||'Kotmiana')+'<br>📱 '+esc(d.phoneDisplay||d.phone)+last+'</div><div class="avail '+(av.ok?'ok':'no')+'">'+av.text+'</div></div></div><div class="acts">'+contactButtons(d)+'</div></div>';
   }).join('');
   var groupsPresent = {};
   donors.forEach(function(d){ groupsPresent[d.group]=1; });
@@ -287,7 +347,34 @@ function renderCompat(){
   });
 }
 
-function openModal(){ document.getElementById('modalBg').classList.add('open'); }
+function openModal(){
+  editingId = null;
+  document.getElementById('modalTitle').textContent = '🩸 Donor Bano';
+  document.getElementById('submitBtn').textContent = '✅ Donor List Mein Add Karo';
+  document.getElementById('fName').value = '';
+  document.getElementById('fGroup').value = '';
+  document.getElementById('fPhone').value = '';
+  document.getElementById('fArea').value = '';
+  document.getElementById('fLast').value = '';
+  document.getElementById('fOut').className = 'out';
+  document.querySelectorAll('#fContact .radio').forEach(function(r){ r.classList.toggle('on', r.dataset.v==='call'); });
+  document.getElementById('modalBg').classList.add('open');
+}
+function editDonor(id){
+  var d = donors.find(function(x){ return x.id===id; });
+  if(!d) return;
+  editingId = id;
+  document.getElementById('fName').value = d.name;
+  document.getElementById('fGroup').value = d.group;
+  document.getElementById('fPhone').value = d.phoneDisplay || d.phone;
+  document.getElementById('fArea').value = d.area || '';
+  document.getElementById('fLast').value = d.lastDonated || '';
+  document.querySelectorAll('#fContact .radio').forEach(function(r){ r.classList.toggle('on', r.dataset.v===d.contact); });
+  document.getElementById('modalTitle').textContent = '✏️ Profile Edit Karo';
+  document.getElementById('submitBtn').textContent = '💾 Save Karo';
+  document.getElementById('fOut').className = 'out';
+  document.getElementById('modalBg').classList.add('open');
+}
 function closeModal(){ document.getElementById('modalBg').classList.remove('open'); }
 function pickContact(el){
   document.querySelectorAll('#fContact .radio').forEach(function(r){ r.classList.remove('on'); });
@@ -308,14 +395,31 @@ function submitDonor(){
   var name = document.getElementById('fName').value.trim();
   var group = document.getElementById('fGroup').value;
   var phoneRaw = document.getElementById('fPhone').value.trim();
-  var contact = (document.querySelector('#fContact .radio.on')||{}).dataset ? document.querySelector('#fContact .radio.on').dataset.v : 'call';
+  var contact = document.querySelector('#fContact .radio.on').dataset.v;
   var area = document.getElementById('fArea').value.trim() || 'Kotmiana';
   var last = document.getElementById('fLast').value || '';
   if(name.length < 3){ showOut('❌ Apna poora naam likho (kam se kam 3 harf).', true); return; }
   if(!group){ showOut('❌ Blood group select karo.', true); return; }
   var ph = normPhone(phoneRaw);
   if(!ph){ showOut('❌ Sahi mobile number likho — e.g. 0306 1601587.', true); return; }
-  var d = {name:name, group:group, phone:ph.intl, phoneDisplay:ph.display, contact:contact, area:area, lastDonated:last, available:true, createdAt:Date.now()};
+  var old = editingId ? donors.find(function(x){ return x.id===editingId; }) : null;
+  var d = {name:name, group:group, phone:ph.intl, phoneDisplay:ph.display, contact:contact, area:area, lastDonated:last, available:true, createdAt: old ? old.createdAt : Date.now()};
+  function afterSave(msg){
+    showOut(msg, false);
+    var id = editingId; editingId = null;
+    setTimeout(function(){ closeModal(); document.getElementById('fOut').className='out'; }, 1500);
+  }
+  if(editingId){
+    if(FB_ON){
+      fbDb.ref('blooddonors/'+editingId).set(d).then(function(){ afterSave('✅ Profile update ho gayi.'); }).catch(function(){ showOut('❌ Save nahi hua — internet check karo aur dobara try karo.', true); });
+    } else {
+      var idx = donors.findIndex(function(x){ return x.id===editingId; });
+      if(idx>=0){ d.id = editingId; donors[idx] = d; }
+      renderChips(); renderDonors();
+      afterSave('✅ Profile update ho gayi. (Demo mode)');
+    }
+    return;
+  }
   if(FB_ON){
     var ref = fbDb.ref('blooddonors').push();
     ref.set(d).then(function(){
@@ -342,6 +446,71 @@ function deleteDonor(id){
   toast('Entry delete kar di.');
 }
 
+function myReqIds(){
+  try{ return JSON.parse(localStorage.getItem('bd_my_req')||'[]'); }catch(e){ return []; }
+}
+function saveMyReqId(id){
+  var l = myReqIds(); l.push(id);
+  try{ localStorage.setItem('bd_my_req', JSON.stringify(l)); }catch(e){}
+}
+function renderRequests(){
+  var mine = myReqIds();
+  var el = document.getElementById('reqGrid');
+  var empty = document.getElementById('reqEmpty');
+  if(!requests.length){ el.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  var list = requests.slice().sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+  el.innerHTML = list.map(function(r){
+    var del = mine.indexOf(r.id)>=0 ? '<button class="del" onclick="deleteRequest(\''+r.id+'\')">🗑️ Delete</button>' : '';
+    var msg = 'Assalam-o-Alaikum! Maine aapki blood request dekhi ('+r.group+') — main blood de sakta hoon. Please reply karein.';
+    return '<div class="card req">'+del+'<div class="top"><div class="badge">🆘</div><div><h3>'+esc(r.patient)+' — '+esc(r.group)+'</h3><div class="meta">🏥 '+esc(r.hospital)+'<br>🩸 Units: <b>'+esc(r.units)+'</b>'+(r.note?' • '+esc(r.note):'')+'</div></div></div><div class="acts">'+contactButtons({phone:r.phone, group:r.group, contact:r.contact}, msg)+'</div></div>';
+  }).join('');
+}
+function openReqModal(){ document.getElementById('reqModalBg').classList.add('open'); }
+function closeReqModal(){ document.getElementById('reqModalBg').classList.remove('open'); }
+function pickReqContact(el){
+  document.querySelectorAll('#rContact .radio').forEach(function(r){ r.classList.remove('on'); });
+  el.classList.add('on');
+}
+function submitRequest(){
+  var patient = document.getElementById('rPatient').value.trim();
+  var hospital = document.getElementById('rHospital').value.trim();
+  var group = document.getElementById('rGroup').value;
+  var units = parseInt(document.getElementById('rUnits').value, 10);
+  var phoneRaw = document.getElementById('rPhone').value.trim();
+  var contact = document.querySelector('#rContact .radio.on').dataset.v;
+  var note = document.getElementById('rNote').value.trim();
+  var o = document.getElementById('rOut');
+  function err(m){ o.className='out show err'; o.textContent=m; }
+  if(patient.length < 3){ err('❌ Mareez ka poora naam likho.'); return; }
+  if(hospital.length < 3){ err('❌ Hospital ka naam likho.'); return; }
+  if(!group){ err('❌ Blood group select karo.'); return; }
+  if(isNaN(units) || units < 1 || units > 10){ err('❌ Units 1 se 10 ke beech likho.'); return; }
+  var ph = normPhone(phoneRaw);
+  if(!ph){ err('❌ Sahi mobile number likho — e.g. 0306 1601587.'); return; }
+  var r = {patient:patient, hospital:hospital, group:group, units:units, phone:ph.intl, phoneDisplay:ph.display, contact:contact, note:note, createdAt:Date.now()};
+  function done(){
+    o.className='out show'; o.textContent='✅ Request add ho gayi — donors aap se rabta karenge.';
+    setTimeout(function(){ closeReqModal(); ['rPatient','rHospital','rUnits','rPhone','rNote'].forEach(function(id){ document.getElementById(id).value=''; }); document.getElementById('rGroup').value=''; o.className='out'; }, 1500);
+  }
+  if(FB_ON){
+    var ref = fbDb.ref('bloodrequests').push();
+    ref.set(r).then(function(){ saveMyReqId(ref.key); done(); }).catch(function(){ err('❌ Save nahi hua — internet check karo.'); });
+  } else {
+    r.id = 'demo-r'+Date.now();
+    requests.push(r); saveMyReqId(r.id);
+    renderRequests(); done();
+  }
+}
+function deleteRequest(id){
+  if(!confirm('Ye request delete kar dein?')) return;
+  if(FB_ON){ fbDb.ref('bloodrequests/'+id).remove().catch(function(){}); }
+  requests = requests.filter(function(r){ return r.id!==id; });
+  var l = myReqIds().filter(function(x){ return x!==id; });
+  try{ localStorage.setItem('bd_my_req', JSON.stringify(l)); }catch(e){}
+  renderRequests();
+  toast('Request delete kar di.');
+}
 function shareSite(){
   var text = '🩸 Kotmiana Blood Donors — Khoon Do, Zindagi Bachao! Apna blood group aur number add karo: ' + location.href;
   if(navigator.share){ navigator.share({title:'Kotmiana Blood Donors', text:text, url:location.href}).catch(function(){}); }
@@ -365,7 +534,12 @@ function enterDemo(msg){
       {id:'demo-3', name:'Usman Ghani (Sample)', group:'A+', phone:'923221234567', phoneDisplay:'0322-1234567', contact:'call', area:'Kotmiana', lastDonated:'', available:true, createdAt:Date.now()-259200000}
     ];
   }
-  renderChips(); renderDonors();
+  if(!requests.length){
+    requests = [
+      {id:'demo-r1', patient:'Sample Patient', hospital:'THQ Kotmiana', group:'B+', units:2, phone:'923001234567', phoneDisplay:'0300-1234567', contact:'both', note:'Sample request', createdAt:Date.now()}
+    ];
+  }
+  renderChips(); renderDonors(); renderRequests();
 }
 
 function startSync(){
@@ -382,6 +556,11 @@ function startSync(){
       }, function(){
         enterDemo('Firebase rules abhi publish nahi hui — admin se rules publish karwao.');
       });
+      fbDb.ref('bloodrequests').on('value', function(snap){
+        var v = snap.val() || {};
+        requests = Object.keys(v).map(function(k){ var o = v[k]; o.id = k; return o; });
+        renderRequests();
+      }, function(){});
       return;
     }
   }catch(e){}
@@ -391,12 +570,14 @@ function startSync(){
 (function init(){
   var sel = document.getElementById('fGroup');
   GROUPS.forEach(function(g){ var o = document.createElement('option'); o.value = g; o.textContent = g; sel.appendChild(o); });
+  var rsel = document.getElementById('rGroup');
+  GROUPS.forEach(function(g){ var o = document.createElement('option'); o.value = g; o.textContent = g; rsel.appendChild(o); });
   renderCompat();
-  renderChips(); renderDonors();
+  renderChips(); renderDonors(); renderRequests();
   startSync();
 })();
 
-window.__BD = {normPhone: normPhone, contactButtons: contactButtons, getDonors: function(){ return donors; }, renderDonors: renderDonors, submitDonor: submitDonor, setFilter: setFilter, onSearch: onSearch, deleteDonor: deleteDonor, GROUPS: GROUPS, COMPAT: COMPAT};
+window.__BD = {normPhone: normPhone, contactButtons: contactButtons, availStatus: availStatus, getDonors: function(){ return donors; }, getRequests: function(){ return requests; }, renderDonors: renderDonors, renderRequests: renderRequests, submitDonor: submitDonor, submitRequest: submitRequest, editDonor: editDonor, deleteDonor: deleteDonor, deleteRequest: deleteRequest, setFilter: setFilter, onSearch: onSearch, GROUPS: GROUPS, COMPAT: COMPAT};
 </script>
 </body>
 </html>
